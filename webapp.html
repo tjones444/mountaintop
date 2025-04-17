@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hangman Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: start;
+      height: 100vh;
+      margin: 0;
+      padding-top: 20px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    #word {
+      font-size: 2rem;
+      letter-spacing: 10px;
+      margin-top: 20px;
+    }
+
+    #keyboard {
+      margin-top: 20px;
+      max-width: 600px;
+      text-align: center;
+    }
+
+    .key {
+      display: inline-block;
+      margin: 5px;
+      padding: 10px 15px;
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .key:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 20px;
+      font-size: 1.2rem;
+    }
+
+    #restart {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    canvas {
+      margin-top: 20px;
+      background: #fff;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hangman</h1>
+  <canvas id="hangmanCanvas" width="200" height="250"></canvas>
+  <div id="word">_ _ _ _ _</div>
+  <div id="keyboard"></div>
+  <div id="message"></div>
+  <button id="restart" onclick="startGame()">Restart</button>
+
+  <script>
+const words = [
+  "apple", "banana", "orange", "grape", "lemon",
+  "house", "chair", "table", "window", "floor",
+  "water", "cloud", "rain", "snow", "storm",
+  "happy", "sad", "funny", "quiet", "loud",
+  "pizza", "cookie", "bread", "cheese", "soup",
+  "school", "pencil", "paper", "book", "class",
+  "dog", "cat", "fish", "bird", "horse",
+  "car", "truck", "train", "plane", "boat",
+  "shirt", "pants", "shoes", "hat", "coat",
+  "blue", "green", "yellow", "black", "white",
+  "sun", "moon", "star", "night", "day",
+  "game", "ball", "jump", "run", "play"
+];
+    let selectedWord = "";
+    let guessedLetters = [];
+    let maxAttempts = 6;
+    let attempts = 0;
+
+    const wordDiv = document.getElementById("word");
+    const keyboardDiv = document.getElementById("keyboard");
+    const messageDiv = document.getElementById("message");
+    const canvas = document.getElementById("hangmanCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function startGame() {
+      selectedWord = words[Math.floor(Math.random() * words.length)];
+      guessedLetters = [];
+      attempts = 0;
+      wordDiv.textContent = getWordDisplay();
+      messageDiv.textContent = "";
+      keyboardDiv.innerHTML = "";
+      clearCanvas();
+
+      for (let i = 65; i <= 90; i++) {
+        const letter = String.fromCharCode(i).toLowerCase();
+        const btn = document.createElement("button");
+        btn.textContent = letter;
+        btn.className = "key";
+        btn.onclick = () => guessLetter(letter, btn);
+        keyboardDiv.appendChild(btn);
+      }
+
+      drawGallows();
+    }
+
+    function getWordDisplay() {
+      return selectedWord
+        .split("")
+        .map(letter => (guessedLetters.includes(letter) ? letter : "_"))
+        .join(" ");
+    }
+
+    function guessLetter(letter, button) {
+      button.disabled = true;
+      if (selectedWord.includes(letter)) {
+        guessedLetters.push(letter);
+      } else {
+        attempts++;
+        drawHangman(attempts);
+      }
+
+      wordDiv.textContent = getWordDisplay();
+
+      if (!wordDiv.textContent.includes("_")) {
+        messageDiv.textContent = "🎉 You won!";
+        disableAllKeys();
+      } else if (attempts >= maxAttempts) {
+        messageDiv.textContent = `💀 You lost! The word was "${selectedWord}".`;
+        disableAllKeys();
+      }
+    }
+
+    function disableAllKeys() {
+      const keys = document.querySelectorAll(".key");
+      keys.forEach(key => key.disabled = true);
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawGallows() {
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(10, 240); // base
+      ctx.lineTo(190, 240);
+      ctx.moveTo(50, 240);
+      ctx.lineTo(50, 20);
+      ctx.lineTo(130, 20);
+      ctx.lineTo(130, 40);
+      ctx.stroke();
+    }
+
+    function drawHangman(step) {
+      ctx.lineWidth = 2;
+      switch(step) {
+        case 1: // head
+          ctx.beginPath();
+          ctx.arc(130, 60, 20, 0, Math.PI * 2);
+          ctx.stroke();
+          break;
+        case 2: // body
+          ctx.beginPath();
+          ctx.moveTo(130, 80);
+          ctx.lineTo(130, 140);
+          ctx.stroke();
+          break;
+        case 3: // left arm
+          ctx.beginPath();
+          ctx.moveTo(130, 100);
+          ctx.lineTo(100, 120);
+          ctx.stroke();
+          break;
+        case 4: // right arm
+          ctx.beginPath();
+          ctx.moveTo(130, 100);
+          ctx.lineTo(160, 120);
+          ctx.stroke();
+          break;
+        case 5: // left leg
+          ctx.beginPath();
+          ctx.moveTo(130, 140);
+          ctx.lineTo(110, 180);
+          ctx.stroke();
+          break;
+        case 6: // right leg
+          ctx.beginPath();
+          ctx.moveTo(130, 140);
+          ctx.lineTo(150, 180);
+          ctx.stroke();
+          break;
+      }
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
